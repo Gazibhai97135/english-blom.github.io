@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>English Bloom</title>
+  <style>
+    :root{
+      --blue:#2e6cf6;
+      --muted:#eef3ff;
+      --card:#ffffff;
+      --bg:#f4f8ff;
+      --text:#122;
+    }
+    *{box-sizing:border-box}
+    body{font-family:Arial,sans-serif;background:var(--bg);color:var(--text);margin:0;padding:0}
+    header{background:var(--blue);color:#fff;padding:22px 16px;text-align:center}
+    header h1{margin:0;font-size:26px;letter-spacing:0.2px}
+    header p{margin:6px 0 0;font-size:14px;opacity:0.95}
+    .topbar{max-width:980px;margin:12px auto;display:flex;justify-content:flex-end;padding:0 12px;gap:8px}
+    .btn{background:#fff;color:var(--blue);border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:600}
+    .container{max-width:980px;margin:20px auto;padding:18px;background:var(--card);border-radius:12px;box-shadow:0 6px 20px rgba(15,35,80,0.06)}
+    h2{color:var(--blue);border-bottom:3px solid var(--muted);padding-bottom:6px}
+    ul{padding-left:18px}
+    .pdf-links{background:var(--muted);padding:12px;border-radius:8px}
+    .note{display:flex;justify-content:space-between;align-items:center;padding:10px 8px;border-bottom:1px dashed #e6eefb}
+    .note a{color:var(--blue);text-decoration:none;font-weight:600}
+    footer{background:var(--blue);color:#fff;padding:12px;text-align:center;margin-top:18px;border-radius:0 0 6px 6px}
+    .modal-back{position:fixed;inset:0;background:rgba(2,6,23,0.45);display:none;align-items:center;justify-content:center;z-index:60}
+    .modal{background:#fff;padding:18px;border-radius:10px;max-width:480px;width:94%;box-shadow:0 10px 30px rgba(15,35,80,0.2);max-height:90vh;overflow:auto}
+    label{display:block;margin:8px 0 4px;font-size:13px}
+    input[type="text"], input[type="password"], input[type="url"], input[type="email"]{width:100%;padding:10px;border-radius:8px;border:1px solid #e6eefb}
+    .small{font-size:13px;color:#666;margin-top:6px}
+    .linksmall{font-size:13px;color:var(--blue)}
+    .actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+    .danger{background:#ff5c5c;color:#fff;border:0;padding:8px 10px;border-radius:8px}
+    .success{background:var(--blue);color:#fff;border:0;padding:8px 10px;border-radius:8px}
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>English Bloom</h1>
+    <p>Learn & Practice English Easily</p>
+  </header>
+
+  <div class="topbar">
+    <button id="signBtn" class="btn">Student Sign In / Sign Up</button>
+    <button id="adminBtn" class="btn">Admin (Rahul)</button>
+  </div>
+
+  <main class="container" id="main">
+
+    <section>
+      <h2>Changing Sentences</h2>
+      <ul>
+        <li>Identify the tense first, then change auxiliary verbs as needed.</li>
+        <li>Affirmative → Negative: add <em>not</em> or use negative forms.</li>
+        <li>Assertive → Interrogative: move auxiliary before the subject.</li>
+        <li>Keep subject–verb agreement correct.</li>
+      </ul>
+      <p><strong>Example:</strong><br>He is honest → Is he honest?<br>She was dancing → Was she dancing?</p>
+    </section>
+
+    <section style="margin-top:18px">
+      <h2>Tag Questions</h2>
+      <ul>
+        <li>Use the helping verb + subject pronoun as the tag.</li>
+        <li>Positive sentence → negative tag; Negative sentence → positive tag.</li>
+      </ul>
+      <p><strong>Example:</strong><br>He is a student, isn’t he?<br>They don’t play football, do they?</p>
+    </section>
+
+    <section style="margin-top:18px">
+      <h2>Notes (PDF Downloads)</h2>
+      <div class="pdf-links" id="pdfArea">
+        <div id="notesList"></div>
+        <p class="small">Manage PDF links via Admin Panel.</p>
+      </div>
+    </section>
+
+    <section style="margin-top:18px">
+      <h2>Practice (MCQs)</h2>
+      <div id="quizBox"></div>
+    </section>
+
+  </main>
+
+  <footer>Created by Rahul</footer>
+
+  <div id="modal" class="modal-back" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true">
+      <div id="modalContent"></div>
+    </div>
+  </div>
+
+<script>
+const ADMIN_PASSWORD='rahul123';
+const ADMIN_NAME='Rahul';
+const modal=document.getElementById('modal');
+const modalContent=document.getElementById('modalContent');
+const adminBtn=document.getElementById('adminBtn');
+const signBtn=document.getElementById('signBtn');
+const notesListEl=document.getElementById('notesList');
+const quizBox=document.getElementById('quizBox');
+
+function showModal(html){ modalContent.innerHTML=html; modal.style.display='flex'; modal.setAttribute('aria-hidden','false'); }
+function closeModal(){ modal.style.display='none'; modal.setAttribute('aria-hidden','true'); }
+modal.addEventListener('click',(e)=>{if(e.target===modal)closeModal();});
+
+function uid(){return'id-'+Math.random().toString(36).slice(2,9)}
+function escapeHtml(s){return String(s||'').replace(/[&<>"]+/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]||c))}
+function escapeAttr(s){return(s||'').replace(/"/g,'&quot;')}
+
+// Notes
+function loadNotes(){try{return JSON.parse(localStorage.getItem('eb_notes')||'[]')}catch(e){return[]}}
+function saveNotes(notes){localStorage.setItem('eb_notes',JSON.stringify(notes))}
+function renderNotes(){const notes=loadNotes();if(!notes.length){notesListEl.innerHTML='<p class="small">No notes yet.</p>';return;}notesListEl.innerHTML=notes.map(n=>`<div class="note"><div><strong>${escapeHtml(n.title)}</strong></div><div><a class="linksmall" href="${escapeAttr(n.link)}" target="_blank">Open</a></div></div>`).join('');}
+
+// Students
+function loadStudents(){try{return JSON.parse(localStorage.getItem('eb_students')||'[]')}catch(e){return[]}}
+function saveStudents(students){localStorage.setItem('eb_students',JSON.stringify(students))}
+function renderAdminStudents(){const el=document.getElementById('adminStudentsList');const students=loadStudents();if(!students.length){el.innerHTML='<p>No students</p>';return;}el.innerHTML=students.map(s=>`<div style="display:flex;justify-content:space-between"><span>${escapeHtml(s.name)}</span><div><button onclick="deleteStudent('${s.id}')">Delete</button></div></div>`).join('');}
+function deleteStudent(id){if(!confirm('Delete student?'))return;let students=loadStudents();students=students.filter(s=>s.id!==id);saveStudents(students);renderAdminStudents();}
+
+// Admin
+function openLogin(){showModal(`<h3>Admin (${ADMIN_NAME}) Login</h3><label>Password</label><input id="passInput" type="password"/><div class="actions"><button class="btn danger" onclick="closeModal()">Cancel</button><button class="btn success" onclick="tryLogin()">Login</button></div>`);setTimeout(()=>document.getElementById('passInput').focus(),50);}
+function tryLogin(){const v=document.getElementById('passInput').value||'';if(v===ADMIN_PASSWORD){showAdminPanel();}else{alert('Incorrect password');}}
+
+function showAdminPanel(){showModal(`<h3>Admin Panel — ${ADMIN_NAME}</h3><strong>Manage PDF Notes</strong><label>Title</label><input id="noteTitle" type="text"/><label>Link</label><input id="noteLink" type="url"/><div class="actions"><button class="btn success" onclick="addNote()">Add Note</button><button class="btn danger" onclick="closeModal()">Close</button></div><div id="adminNotesList"></div><hr><strong>Manage Students</strong><div id="adminStudentsList"></div>`);renderAdminNotes();renderAdminStudents();}
+function addNote(){const title=(document.getElementById('noteTitle').value||'').trim();const link=(document.getElementById('noteLink').value||'').trim();if(!title||!link){alert('Provide title and link');return;}const notes=loadNotes();notes.unshift({id:uid(),title,link,time:Date.now()});saveNotes(notes);renderNotes();renderAdminNotes();document.getElementById('noteTitle').value='';document.getElementById('noteLink').value='';alert('Note added');}
+function renderAdminNotes(){const el=document.getElementById('adminNotesList');const notes=loadNotes();if(!notes.length){el.innerHTML='<p>No notes</p>';return;}el.innerHTML=notes.map(n=>`<div style="display:flex;justify-content:space-between"><span>${escapeHtml(n.title)}</span><div><button onclick="deleteNote('${n.id}')">Delete</button></div></div>`).join('');}
+function deleteNote(id){if(!confirm('Delete?'))return;let notes=loadNotes();notes=notes.filter(n=>n.id!==id);saveNotes(notes);renderNotes();renderAdminNotes();}
+
+// Student login/signup
+signBtn.addEventListener('click',()=>{
+showModal(`<h3>Student Sign Up / Sign In</h3>
+<label>Name</label><input id="stuName" type="text"/>
+<label>Email</label><input id="stuEmail" type="email"/>
+<label>Password</label><input id="stuPass" type="password"/>
+<div class="actions">
+<button class="btn success" onclick="studentSignUp()">Sign Up</button>
+<button class="btn success" onclick="studentSignIn()">Sign In</button>
+<button class="btn danger" onclick="closeModal()">Close</button>
+</div>`);});
+
+function studentSignUp(){const name=(document.getElementById('stuName').value||'').trim();const email=(document.getElementById('stuEmail').value||'').trim();const pass=(document.getElementById('stuPass').value||'').trim();if(!name||!email||!pass){alert('Fill all');return;}let students=loadStudents();if(students.find(s=>s.email===email)){alert('Email exists');return;}students.unshift({id:uid(),name,email,pass});saveStudents(students);alert('Registered');closeModal();}
+function studentSignIn(){const email=(document.getElementById('stuEmail').value||'').trim();const pass=(document.getElementById('stuPass').value||'').trim();const students=loadStudents();const stu=students.find(s=>s.email===email&&s.pass===pass);if(stu){alert('Welcome '+stu.name);closeModal();}else{alert('Invalid credentials');}}
+
+// MCQs
+const mcqs=[
+{q:'He _____ happy.',opts:['is','are','am','be'],ans:0},
+{q:'They _____ playing.',opts:['was','is','are','am'],ans:2},
+{q:'She _____ a doctor.',opts:['is','are','was','be'],ans:0}
+];
+function renderQuiz(){quizBox.innerHTML='';mcqs.forEach((m,i)=>{
+const div=document.createElement('div');
+div.innerHTML=`<p><strong>${m.q}</strong></p>${m.opts.map((o,j)=>`<div><button class='btn' onclick='checkAns(${i},${j})'>${o}</button></div>`).join('')}`;
+quizBox.appendChild(div);});}
+function checkAns(qi,oi){if(mcqs[qi].ans===oi){alert('Yes! Correct')}else{alert('Incorrect')}}
+renderNotes();
+renderQuiz();
+adminBtn.addEventListener('click',openLogin);
+</script>
+
+</body>
+          </html>
